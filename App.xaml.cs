@@ -1,13 +1,9 @@
-﻿using System.Configuration;
-using System.Data;
+using SecLock;
 using System.Windows;
 
-namespace SecLock;
-
-/// <summary>
-/// Interaction logic for App.xaml
-/// </summary>
-public partial class App : Application
+namespace SecureAppLocker
 {
+    public partial class App : Application
+    {
+    }
 }
-
