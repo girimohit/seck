@@ -1,18 +1,24 @@
-using System.ComponentModel;
-using System.Collections.ObjectModel;
 using SecureAppLocker.Services;
-using System.Windows.Input;
 using SecureAppLocker.Helpers;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Windows.Input;
 
 namespace SecureAppLocker.ViewModels
 {
     public class MainViewModel : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler? PropertyChanged;
-        public readonly ProcessService _processService;
-        public ObservableCollection<string> RunningApps { get; set; }
 
-        public string? _selectedApp;
+        private readonly ProcessService _processService;
+        private readonly LockService _lockService;
+        private readonly MonitorService _monitorService;
+        private readonly AuthService _authService;
+
+        public ObservableCollection<string> RunningApps { get; set; }
+        public ObservableCollection<string> LockedApps { get; set; }
+
+        private string? _selectedApp;
         public string? SelectedApp
         {
             get => _selectedApp;
@@ -23,42 +29,61 @@ namespace SecureAppLocker.ViewModels
             }
         }
 
-        public ICommand KillAppCommand { get; private set; } = null!;
+        public ICommand LockCommand { get; }
+        public ICommand UnlockCommand { get; }
+
         public MainViewModel()
         {
             _processService = new ProcessService();
+            _lockService = new LockService();
+            _authService = new AuthService();
+
+            _monitorService = new MonitorService(_processService, _lockService);
+            _monitorService.Start();
+
             RunningApps = new ObservableCollection<string>();
-            KillAppCommand = new RelayCommand(KillSelectedApp);
+            LockedApps = new ObservableCollection<string>();
+
+            LockCommand = new RelayCommand(LockApp);
+            UnlockCommand = new RelayCommand(UnlockApp);
+
             LoadProcesses();
         }
 
-        public void LoadProcesses()
+        private void LoadProcesses()
         {
-            var processes = _processService.GetRunningProcesses();
             RunningApps.Clear();
-            foreach(var process in processes)
+
+            foreach (var app in _processService.GetRunningProcesses())
             {
-                RunningApps.Add(process);   
+                RunningApps.Add(app);
             }
         }
 
-        private void KillSelectedApp()
+        private void LockApp()
         {
-            if (!string.IsNullOrEmpty(SelectedApp))
+            if (SelectedApp != null)
             {
-                _processService.KillProcess(SelectedApp);
-                LoadProcesses();
+                _lockService.AddLock(SelectedApp);
+
+                if (!LockedApps.Contains(SelectedApp))
+                    LockedApps.Add(SelectedApp);
             }
         }
-        //private string _status = "App Ready";
-        //public string Status
-        //{
-        //    get => _status;
-        //    set
-        //    {
-        //        _status = value;
-        //        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Status)));
-        //    }
-        //}
+
+        private void UnlockApp()
+        {
+            if (SelectedApp == null) return;
+
+            // TEMP: simple input (replace later with UI popup)
+            string input = Microsoft.VisualBasic.Interaction.InputBox(
+                "Enter password:", "Unlock App", "");
+
+            if (_authService.Validate(input))
+            {
+                _lockService.RemoveLock(SelectedApp);
+                LockedApps.Remove(SelectedApp);
+            }
+        }
     }
 }

@@ -6,25 +6,33 @@
         xmlns:local="clr-namespace:SecLock"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
-    
-	<Grid>
-    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
 
-        <TextBlock Text="Secure App Locker"
+    <Grid>
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+
+            <TextBlock Text="Secure App Locker"
                    FontSize="24"
-                   FontWeight="Bold"
                    Margin="0,0,0,20"/>
 
-        <ListBox ItemsSource="{Binding RunningApps}"
-                 SelectedItem="{Binding SelectedApp}"
-                 Width="300"
-                 Height="200"/>
+            <TextBlock Text="Running Apps"/>
 
-        <Button Content="Kill Selected App"
-                Command="{Binding KillAppCommand}"
-                Width="200"
-                Height="40"
-                Margin="0,20,0,0"/>
-    </StackPanel>
-</Grid>
+            <ListBox ItemsSource="{Binding RunningApps}"
+                 SelectedItem="{Binding SelectedApp}"
+                 Width="300" Height="150"/>
+
+            <StackPanel Orientation="Horizontal" Margin="0,10">
+                <Button Content="Lock"
+                    Command="{Binding LockCommand}"
+                    Width="100" Margin="5"/>
+                <Button Content="Unlock"
+                    Command="{Binding UnlockCommand}"
+                    Width="100" Margin="5"/>
+            </StackPanel>
+
+            <TextBlock Text="Locked Apps" Margin="0,20,0,0"/>
+
+            <ListBox ItemsSource="{Binding LockedApps}"
+                 Width="300" Height="100"/>
+        </StackPanel>
+    </Grid>
 </Window>
