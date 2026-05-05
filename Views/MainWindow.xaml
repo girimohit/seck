@@ -6,7 +6,13 @@
         xmlns:local="clr-namespace:SecLock"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
+    
 	<Grid>
+        <ListBox ItemsSource="{Binding RunningApps}"
+         Width="300"
+         Height="200"
+         Margin="0,20,0,0"/>
+		
 		<StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
 
 			<TextBlock Text="Secure App Locker"
