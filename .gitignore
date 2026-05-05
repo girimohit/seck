@@ -1,0 +1,54 @@
+# Build results
+bin/
+obj/
+/obj/
+/bin/
+
+# Visual Studio files
+.vs/
+/.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider
+.idea/
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# NuGet
+*.nupkg
+packages/
+.nuget/
+
+# Publish output
+publish/
+
+# Resharper
+_ReSharper*/
+*.DotSettings.user
+
+# Temporary files
+*.tmp
+*.temp
+
+# Coverage
+coverage/
+*.coverage
+*.coveragexml
+
+# SQLite (if used later)
+*.db
+*.sqlite
+
+# Environment files
+.env

@@ -1,0 +1,30 @@
+﻿<Window x:Class="SecLock.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SecLock"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800">
+	<Grid>
+		<StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+
+			<TextBlock Text="Secure App Locker"
+					   FontSize="24"
+					   FontWeight="Bold"
+					   Margin="0,0,0,20"/>
+
+			<TextBlock Text="{Binding Status}"
+					   Margin="0,0,0,20"/>
+
+			<Button Content="Lock Apps"
+					Width="150"
+					Height="40"
+					Margin="0,0,0,10"/>
+
+			<Button Content="Unlock Apps"
+					Width="150"
+					Height="40"/>
+		</StackPanel>
+	</Grid>
+</Window>
