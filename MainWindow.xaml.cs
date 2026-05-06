@@ -82,5 +82,13 @@ namespace SecureAppLocker.Views
                 Hide();
             }
         }
+
+        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        {
+            e.Cancel = true;
+            Hide();
+        }
+
+
     }
 }

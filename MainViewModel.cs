@@ -33,6 +33,7 @@ namespace SecureAppLocker.ViewModels
 
         public ICommand LockCommand { get; }
         public ICommand UnlockCommand { get; }
+        public ICommand ChangePasswordCommand { get; }
 
         public MainViewModel()
         {
@@ -50,6 +51,8 @@ namespace SecureAppLocker.ViewModels
 
             LockCommand = new RelayCommand(LockApp);
             UnlockCommand = new RelayCommand(UnlockApp);
+
+            ChangePasswordCommand = new RelayCommand(ChangePassword);
 
             LoadProcesses();
         }
@@ -73,6 +76,7 @@ namespace SecureAppLocker.ViewModels
                 if (!LockedApps.Contains(SelectedApp))
                     LockedApps.Add(SelectedApp);
             }
+            Logger.Log($"Locked app: {SelectedApp}");
         }
 
         private void UnlockApp()
@@ -87,6 +91,19 @@ namespace SecureAppLocker.ViewModels
             {
                 _lockService.RemoveLock(SelectedApp);
                 LockedApps.Remove(SelectedApp);
+            }
+            Logger.Log($"Unlocked app: {SelectedApp}");
+        }
+
+        private void ChangePassword()
+        {
+            string newPassword = Microsoft.VisualBasic.Interaction.InputBox(
+                "Enter new password : ",
+                "Change Password",
+                "");
+            if (!string.IsNullOrWhiteSpace(newPassword))
+            {
+                _authService.ChangePassword(newPassword);
             }
         }
     }
