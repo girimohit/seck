@@ -5,38 +5,663 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SecureAppLocker.Views"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="SecureAppLocker"
+        Height="680" Width="520"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="CanResizeWithGrip">
 
-    <Grid>
-        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+    <Window.Resources>
 
-            <TextBlock Text="Secure App Locker"
-                   FontSize="24"
-                   Margin="0,0,0,20"/>
+        <!-- ── COLORS ── -->
+        <Color x:Key="BgDeep">#0A0D14</Color>
+        <Color x:Key="BgPanel">#0F1320</Color>
+        <Color x:Key="BgCard">#141828</Color>
+        <Color x:Key="BgCardHover">#1A1F30</Color>
+        <Color x:Key="AccentCyan">#00D4FF</Color>
+        <Color x:Key="AccentCyanDim">#0099BB</Color>
+        <Color x:Key="AccentRed">#FF3860</Color>
+        <Color x:Key="AccentGreen">#00E5A0</Color>
+        <Color x:Key="TextPrimary">#E8EAF0</Color>
+        <Color x:Key="TextSecondary">#6B7394</Color>
+        <Color x:Key="TextMuted">#3A4060</Color>
+        <Color x:Key="GlassBorder">#1E2540</Color>
 
-            <TextBlock Text="Running Apps"/>
+        <SolidColorBrush x:Key="BrBgDeep"      Color="{StaticResource BgDeep}"/>
+        <SolidColorBrush x:Key="BrBgPanel"     Color="{StaticResource BgPanel}"/>
+        <SolidColorBrush x:Key="BrBgCard"      Color="{StaticResource BgCard}"/>
+        <SolidColorBrush x:Key="BrAccentCyan"  Color="{StaticResource AccentCyan}"/>
+        <SolidColorBrush x:Key="BrAccentRed"   Color="{StaticResource AccentRed}"/>
+        <SolidColorBrush x:Key="BrAccentGreen" Color="{StaticResource AccentGreen}"/>
+        <SolidColorBrush x:Key="BrTextPrimary" Color="{StaticResource TextPrimary}"/>
+        <SolidColorBrush x:Key="BrTextSec"     Color="{StaticResource TextSecondary}"/>
+        <SolidColorBrush x:Key="BrGlassBorder" Color="{StaticResource GlassBorder}"/>
 
-            <ListBox ItemsSource="{Binding RunningApps}"
-                 SelectedItem="{Binding SelectedApp}"
-                 Width="300" Height="150"/>
+        <!-- ── DROP SHADOW ── -->
+        <DropShadowEffect x:Key="CardShadow"
+                          Color="#000000" Opacity="0.55"
+                          BlurRadius="24" ShadowDepth="4" Direction="270"/>
 
-            <StackPanel Orientation="Horizontal" Margin="0,10">
-                <Button Content="Lock"
-                    Command="{Binding LockCommand}"
-                    Width="100" Margin="5"/>
-                <Button Content="Unlock"
-                    Command="{Binding UnlockCommand}"
-                    Width="100" Margin="5"/>
-                <Button Content="Change Password"
-                    Command="{Binding ChangePasswordCommand}"
-                    Width="200"
-                    Margin="0,10,0,0"/>
-            </StackPanel>
+        <DropShadowEffect x:Key="GlowCyan"
+                          Color="#00D4FF" Opacity="0.6"
+                          BlurRadius="14" ShadowDepth="0"/>
 
-            <TextBlock Text="Locked Apps" Margin="0,20,0,0"/>
+        <DropShadowEffect x:Key="GlowRed"
+                          Color="#FF3860" Opacity="0.55"
+                          BlurRadius="12" ShadowDepth="0"/>
 
-            <ListBox ItemsSource="{Binding LockedApps}"
-                 Width="300" Height="100"/>
-        </StackPanel>
-    </Grid>
+        <DropShadowEffect x:Key="GlowGreen"
+                          Color="#00E5A0" Opacity="0.55"
+                          BlurRadius="12" ShadowDepth="0"/>
+
+        <!-- ── SCROLLBAR ── -->
+        <Style x:Key="SlimScrollBar" TargetType="ScrollBar">
+            <Setter Property="Width" Value="4"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Grid>
+                            <Track x:Name="PART_Track" IsDirectionReversed="True">
+                                <Track.Thumb>
+                                    <Thumb>
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Border Background="#2A3050"
+                                                        CornerRadius="2"
+                                                        Margin="1,0"/>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ModernScrollViewer" TargetType="ScrollViewer">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollViewer">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ScrollContentPresenter Grid.Column="0"/>
+                            <ScrollBar Grid.Column="1"
+                                       Style="{StaticResource SlimScrollBar}"
+                                       Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"
+                                       Value="{TemplateBinding VerticalOffset}"
+                                       Maximum="{TemplateBinding ScrollableHeight}"
+                                       ViewportSize="{TemplateBinding ViewportHeight}"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── LIST ITEM ── -->
+        <Style x:Key="AppListItem" TargetType="ListBoxItem">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource BrTextPrimary}"/>
+            <Setter Property="Padding" Value="10,7"/>
+            <Setter Property="Margin" Value="0,2"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="ItemBorder"
+                                Background="Transparent"
+                                CornerRadius="6"
+                                BorderThickness="1"
+                                BorderBrush="Transparent"
+                                Padding="{TemplateBinding Padding}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="6"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Rectangle x:Name="AccentBar"
+                                           Grid.Column="0"
+                                           Width="3" Height="14"
+                                           RadiusX="2" RadiusY="2"
+                                           Fill="#2A3050"
+                                           HorizontalAlignment="Left"
+                                           VerticalAlignment="Center"/>
+                                <ContentPresenter Grid.Column="1"
+                                                  Margin="8,0,0,0"
+                                                  VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="#1A1F30"/>
+                                <Setter TargetName="ItemBorder" Property="BorderBrush" Value="#1E2540"/>
+                                <Setter TargetName="AccentBar" Property="Fill" Value="{StaticResource BrAccentCyan}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="#12192B"/>
+                                <Setter TargetName="ItemBorder" Property="BorderBrush" Value="#00D4FF44"/>
+                                <Setter TargetName="AccentBar" Property="Fill" Value="{StaticResource BrAccentCyan}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── LISTBOX ── -->
+        <Style x:Key="GlassListBox" TargetType="ListBox">
+            <Setter Property="Background" Value="#0C1020"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BrGlassBorder}"/>
+            <Setter Property="Foreground" Value="{StaticResource BrTextPrimary}"/>
+            <Setter Property="ItemContainerStyle" Value="{StaticResource AppListItem}"/>
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="Padding" Value="4"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBox">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8">
+                            <ScrollViewer Style="{StaticResource ModernScrollViewer}"
+                                          Padding="{TemplateBinding Padding}">
+                                <ItemsPresenter/>
+                            </ScrollViewer>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── PRIMARY BUTTON (Cyan) ── -->
+        <Style x:Key="BtnPrimary" TargetType="Button">
+            <Setter Property="Foreground" Value="#0A0D14"/>
+            <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Root"
+                                Background="{StaticResource BrAccentCyan}"
+                                CornerRadius="7"
+                                Padding="0,10">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#22E8FF"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#0099BB"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.3"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── DANGER BUTTON (Red) ── -->
+        <Style x:Key="BtnDanger" TargetType="Button">
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Root"
+                                Background="#2A0010"
+                                BorderBrush="{StaticResource BrAccentRed}"
+                                BorderThickness="1"
+                                CornerRadius="7"
+                                Padding="0,10">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#3A0018"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#1A000C"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.3"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── GHOST BUTTON ── -->
+        <Style x:Key="BtnGhost" TargetType="Button">
+            <Setter Property="Foreground" Value="{StaticResource BrTextSec}"/>
+            <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Root"
+                                Background="Transparent"
+                                BorderBrush="{StaticResource BrGlassBorder}"
+                                BorderThickness="1"
+                                CornerRadius="7"
+                                Padding="0,10">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#141828"/>
+                                <Setter TargetName="Root" Property="BorderBrush" Value="#2A3050"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#0C1020"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.3"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── ICON BUTTON (window controls) ── -->
+        <Style x:Key="BtnWinCtrl" TargetType="Button">
+            <Setter Property="Foreground" Value="#6B7394"/>
+            <Setter Property="Width"  Value="32"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Root"
+                                Background="Transparent"
+                                CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#1A1F30"/>
+                                <Setter Property="Foreground" Value="#E8EAF0"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Close button variant -->
+        <Style x:Key="BtnClose" TargetType="Button" BasedOn="{StaticResource BtnWinCtrl}">
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Foreground" Value="#FF3860"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+    </Window.Resources>
+
+    <!-- ╔══════════════════════════════════════╗ -->
+    <!-- ║           ROOT CHROME                ║ -->
+    <!-- ╚══════════════════════════════════════╝ -->
+    <Border CornerRadius="14"
+            Background="{StaticResource BrBgDeep}"
+            BorderBrush="#1A2035"
+            BorderThickness="1"
+            Effect="{StaticResource CardShadow}">
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="48"/>   <!-- title bar -->
+                <RowDefinition Height="*"/>    <!-- content  -->
+                <RowDefinition Height="36"/>   <!-- status   -->
+            </Grid.RowDefinitions>
+
+            <!-- ── DECORATIVE ACCENT LINES ── -->
+            <!-- Top cyan hairline -->
+            <Border Grid.Row="0"
+                    VerticalAlignment="Top"
+                    Height="1"
+                    CornerRadius="14,14,0,0"
+                    Background="#00D4FF"
+                    Opacity="0.35"/>
+
+            <!-- Left side glow strip -->
+            <Border Grid.RowSpan="3"
+                    HorizontalAlignment="Left"
+                    Width="1"
+                    Margin="0,14,0,14"
+                    CornerRadius="14">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="Transparent"   Offset="0"/>
+                        <GradientStop Color="#00D4FF"       Offset="0.5"/>
+                        <GradientStop Color="Transparent"   Offset="1"/>
+                    </LinearGradientBrush>
+                </Border.Background>
+            </Border>
+
+            <!-- ════════════ TITLE BAR ════════════ -->
+            <Grid Grid.Row="0"
+                  MouseDown="TitleBar_MouseDown"
+                  Background="Transparent">
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Logo + Title -->
+                <StackPanel Grid.Column="0"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="18,0,0,0">
+
+                    <!-- Shield icon -->
+                    <Viewbox Width="20" Height="20" Margin="0,0,10,0">
+                        <Canvas Width="24" Height="24">
+                            <Path Fill="#00D4FF"
+                                  Data="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5L12 1z"
+                                  Effect="{StaticResource GlowCyan}"/>
+                            <Path Fill="#0A0D14"
+                                  Data="M10 17l-3-3 1.41-1.41L10 14.17l5.59-5.58L17 10l-7 7z"/>
+                        </Canvas>
+                    </Viewbox>
+
+                    <TextBlock Text="SECURE"
+                               FontFamily="Segoe UI Black"
+                               FontSize="13"
+                               Foreground="{StaticResource BrAccentCyan}"
+                               VerticalAlignment="Center"
+                               Effect="{StaticResource GlowCyan}"/>
+
+                    <TextBlock Text=" LOCKER"
+                               FontFamily="Segoe UI Light"
+                               FontSize="13"
+                               Foreground="#A0AACC"
+                               VerticalAlignment="Center"
+                               Margin="2,0,0,0"/>
+                </StackPanel>
+
+                <!-- Version pill -->
+                <Border Grid.Column="1"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="#0C1020"
+                        BorderBrush="#1E2540"
+                        BorderThickness="1"
+                        CornerRadius="10"
+                        Padding="8,3">
+                    <TextBlock Text="v 2.0"
+                               FontFamily="Consolas"
+                               FontSize="10"
+                               Foreground="#3A4060"/>
+                </Border>
+
+                <!-- Window controls -->
+                <StackPanel Grid.Column="2"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="0,0,10,0">
+                    <Button Style="{StaticResource BtnWinCtrl}"
+                            Content="—"
+                            Click="Minimize_Click"/>
+                    <Button Style="{StaticResource BtnWinCtrl}"
+                            Content="□"
+                            Click="Maximize_Click"/>
+                    <Button Style="{StaticResource BtnClose}"
+                            Content="✕"
+                            Click="Close_Click"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- Separator under titlebar -->
+            <Border Grid.Row="0"
+                    VerticalAlignment="Bottom"
+                    Height="1"
+                    Background="{StaticResource BrGlassBorder}"/>
+
+            <!-- ════════════ MAIN CONTENT ════════════ -->
+            <ScrollViewer Grid.Row="1"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Style="{StaticResource ModernScrollViewer}">
+
+                <StackPanel Margin="22,20,22,16">
+
+                    <!-- ── RUNNING APPS SECTION ── -->
+                    <Border Background="{StaticResource BrBgCard}"
+                            BorderBrush="{StaticResource BrGlassBorder}"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Padding="16,14"
+                            Margin="0,0,0,14"
+                            Effect="{StaticResource CardShadow}">
+                        <StackPanel>
+
+                            <!-- Section header -->
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <!-- Green dot indicator -->
+                                    <Ellipse Width="7" Height="7"
+                                             Fill="{StaticResource BrAccentGreen}"
+                                             Margin="0,0,8,0"
+                                             VerticalAlignment="Center"
+                                             Effect="{StaticResource GlowGreen}"/>
+                                    <TextBlock Text="RUNNING APPS"
+                                               FontFamily="Segoe UI Semibold"
+                                               FontSize="10"
+                                               Foreground="#6B7394"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <!-- Count badge -->
+                                <Border Grid.Column="1"
+                                        Background="#0C1020"
+                                        BorderBrush="#1E2540"
+                                        BorderThickness="1"
+                                        CornerRadius="8"
+                                        Padding="8,3">
+                                    <TextBlock Text="{Binding RunningApps.Count, FallbackValue=0}"
+                                               FontFamily="Consolas"
+                                               FontSize="11"
+                                               Foreground="{StaticResource BrAccentCyan}"/>
+                                </Border>
+                            </Grid>
+
+                            <ListBox Style="{StaticResource GlassListBox}"
+                                     ItemsSource="{Binding RunningApps}"
+                                     SelectedItem="{Binding SelectedApp}"
+                                     Height="160"/>
+
+                            <!-- Action buttons -->
+                            <Grid Margin="0,12,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Button Grid.Column="0"
+                                        Style="{StaticResource BtnDanger}"
+                                        Command="{Binding LockCommand}"
+                                        Effect="{StaticResource GlowRed}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="🔒  " FontSize="12"/>
+                                        <TextBlock Text="LOCK" FontFamily="Segoe UI Semibold" FontSize="12"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <Button Grid.Column="2"
+                                        Style="{StaticResource BtnPrimary}"
+                                        Command="{Binding UnlockCommand}"
+                                        Effect="{StaticResource GlowCyan}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="🔓  " FontSize="12"/>
+                                        <TextBlock Text="UNLOCK" FontFamily="Segoe UI Semibold" FontSize="12"
+                                                   Foreground="#0A0D14"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ── LOCKED APPS SECTION ── -->
+                    <Border Background="{StaticResource BrBgCard}"
+                            BorderBrush="{StaticResource BrGlassBorder}"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Padding="16,14"
+                            Margin="0,0,0,14"
+                            Effect="{StaticResource CardShadow}">
+                        <StackPanel>
+
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Ellipse Width="7" Height="7"
+                                             Fill="{StaticResource BrAccentRed}"
+                                             Margin="0,0,8,0"
+                                             VerticalAlignment="Center"
+                                             Effect="{StaticResource GlowRed}"/>
+                                    <TextBlock Text="LOCKED APPS"
+                                               FontFamily="Segoe UI Semibold"
+                                               FontSize="10"
+                                               Foreground="#6B7394"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <Border Grid.Column="1"
+                                        Background="#0C1020"
+                                        BorderBrush="#1E2540"
+                                        BorderThickness="1"
+                                        CornerRadius="8"
+                                        Padding="8,3">
+                                    <TextBlock Text="{Binding LockedApps.Count, FallbackValue=0}"
+                                               FontFamily="Consolas"
+                                               FontSize="11"
+                                               Foreground="{StaticResource BrAccentRed}"/>
+                                </Border>
+                            </Grid>
+
+                            <ListBox Style="{StaticResource GlassListBox}"
+                                     ItemsSource="{Binding LockedApps}"
+                                     Height="120"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ── SETTINGS ROW ── -->
+                    <Button Style="{StaticResource BtnGhost}"
+                            Command="{Binding ChangePasswordCommand}"
+                            HorizontalAlignment="Stretch">
+                        <StackPanel Orientation="Horizontal" Margin="0,1">
+                            <TextBlock Text="⚙  " FontSize="13" VerticalAlignment="Center"/>
+                            <TextBlock Text="CHANGE PASSWORD"
+                                       FontFamily="Segoe UI Semibold"
+                                       FontSize="11"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- ════════════ STATUS BAR ════════════ -->
+            <Border Grid.Row="2"
+                    Background="#0C1020"
+                    BorderBrush="{StaticResource BrGlassBorder}"
+                    BorderThickness="0,1,0,0"
+                    CornerRadius="0,0,14,14">
+
+                <Grid Margin="18,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Ellipse Width="5" Height="5"
+                                 Fill="{StaticResource BrAccentGreen}"
+                                 Margin="0,0,7,0"
+                                 Effect="{StaticResource GlowGreen}"/>
+                        <TextBlock Text="PROTECTION ACTIVE"
+                                   FontFamily="Consolas"
+                                   FontSize="10"
+                                   Foreground="#3A4060"/>
+                    </StackPanel>
+
+                    <TextBlock Grid.Column="1"
+                               Text="SecureAppLocker © 2026"
+                               FontFamily="Consolas"
+                               FontSize="9"
+                               Foreground="#28304A"
+                               VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+
+        </Grid>
+    </Border>
 </Window>
+
+
+
+<!-- using System.Windows;
+using System.Windows.Input;
+
+namespace SecureAppLocker.Views
+{
+    public partial class MainWindow : Window
+    {
+        public MainWindow()
+        {
+            InitializeComponent();
+        }
+
+        // Drag to move the borderless window
+        private void TitleBar_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left)
+                DragMove();
+        }
+
+        private void Minimize_Click(object sender, RoutedEventArgs e)
+            => WindowState = WindowState.Minimized;
+
+        private void Maximize_Click(object sender, RoutedEventArgs e)
+            => WindowState = WindowState == WindowState.Maximized
+                ? WindowState.Normal
+                : WindowState.Maximized;
+
+        private void Close_Click(object sender, RoutedEventArgs e)
+            => Close();
+    }
+} -->
