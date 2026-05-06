@@ -29,6 +29,11 @@ namespace SecureAppLocker.Views
 
         private void Close_Click(object sender, RoutedEventArgs e)
             => Close();
+
+        private void ListBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+
+        }
     }
 }
 

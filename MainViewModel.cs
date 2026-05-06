@@ -14,6 +14,7 @@ namespace SecureAppLocker.ViewModels
         private readonly LockService _lockService;
         private readonly MonitorService _monitorService;
         private readonly AuthService _authService;
+        private readonly System.Windows.Threading.DispatcherTimer _refreshTimer;
 
         public ObservableCollection<string> RunningApps { get; set; }
         public ObservableCollection<string> LockedApps { get; set; }
@@ -45,6 +46,12 @@ namespace SecureAppLocker.ViewModels
 
             _monitorService = new MonitorService(_processService, _lockService);
             _monitorService.Start();
+
+            // to refresh process
+            _refreshTimer = new System.Windows.Threading.DispatcherTimer();
+            _refreshTimer.Interval = TimeSpan.FromSeconds(2);
+            _refreshTimer.Tick += (s,e) => LoadProcesses();
+            _refreshTimer.Start();
 
             RunningApps = new ObservableCollection<string>();
             LockedApps = new ObservableCollection<string>();
