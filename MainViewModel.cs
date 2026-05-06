@@ -28,12 +28,16 @@ namespace SecureAppLocker.ViewModels
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedApp)));
             }
         }
+        
+        
 
         public ICommand LockCommand { get; }
         public ICommand UnlockCommand { get; }
 
         public MainViewModel()
         {
+            StartupHelper.EnableAutoStart();
+
             _processService = new ProcessService();
             _lockService = new LockService();
             _authService = new AuthService();
@@ -86,4 +90,5 @@ namespace SecureAppLocker.ViewModels
             }
         }
     }
+
 }
