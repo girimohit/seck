@@ -2,6 +2,7 @@ using SecureAppLocker.Services;
 using SecureAppLocker.Helpers;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Windows.Input;
 
 namespace SecureAppLocker.ViewModels
@@ -18,6 +19,7 @@ namespace SecureAppLocker.ViewModels
 
         public ObservableCollection<string> RunningApps { get; set; }
         public ObservableCollection<string> LockedApps { get; set; }
+        public ObservableCollection<string> AlwaysLockedApps { get; set; }
 
         private string? _selectedApp;
         public string? SelectedApp
@@ -29,12 +31,13 @@ namespace SecureAppLocker.ViewModels
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedApp)));
             }
         }
-        
-        
 
         public ICommand LockCommand { get; }
         public ICommand UnlockCommand { get; }
         public ICommand ChangePasswordCommand { get; }
+        public ICommand AlwaysLockCommand { get; }
+        public ICommand SessionUnlockCommand { get; }
+        public ICommand RemoveAlwaysLockCommand { get; }
 
         public MainViewModel()
         {
@@ -50,18 +53,22 @@ namespace SecureAppLocker.ViewModels
             // to refresh process
             _refreshTimer = new System.Windows.Threading.DispatcherTimer();
             _refreshTimer.Interval = TimeSpan.FromSeconds(2);
-            _refreshTimer.Tick += (s,e) => LoadProcesses();
+            _refreshTimer.Tick += (s, e) => LoadProcesses();
             _refreshTimer.Start();
 
             RunningApps = new ObservableCollection<string>();
             LockedApps = new ObservableCollection<string>();
+            AlwaysLockedApps = new ObservableCollection<string>();
 
             LockCommand = new RelayCommand(LockApp);
             UnlockCommand = new RelayCommand(UnlockApp);
-
             ChangePasswordCommand = new RelayCommand(ChangePassword);
+            AlwaysLockCommand = new RelayCommand(AlwaysLockApp);
+            SessionUnlockCommand = new RelayCommand(SessionUnlockApp);
+            RemoveAlwaysLockCommand = new RelayCommand(RemoveAlwaysLockApp);
 
             LoadProcesses();
+            LoadAlwaysLockedApps();
         }
 
         private void LoadProcesses()
@@ -71,6 +78,15 @@ namespace SecureAppLocker.ViewModels
             foreach (var app in _processService.GetRunningProcesses())
             {
                 RunningApps.Add(app);
+            }
+        }
+
+        private void LoadAlwaysLockedApps()
+        {
+            AlwaysLockedApps.Clear();
+            foreach (var app in _lockService.GetAlwaysLockedApps())
+            {
+                AlwaysLockedApps.Add(app);
             }
         }
 
@@ -88,18 +104,111 @@ namespace SecureAppLocker.ViewModels
 
         private void UnlockApp()
         {
-            if (SelectedApp == null) return;
+            string? appToUnlock = SelectedApp;
+            if (string.IsNullOrEmpty(appToUnlock) || !LockedApps.Contains(appToUnlock))
+            {
+                appToUnlock = LockedApps.FirstOrDefault();
+            }
 
-            // TEMP: simple input (replace later with UI popup)
+            if (appToUnlock == null) return;
+
             string input = Microsoft.VisualBasic.Interaction.InputBox(
-                "Enter password:", "Unlock App", "");
+                $"Enter password to unlock '{appToUnlock}':", "Unlock App", "");
+
+            if (string.IsNullOrEmpty(input)) return;
 
             if (_authService.Validate(input))
             {
-                _lockService.RemoveLock(SelectedApp);
-                LockedApps.Remove(SelectedApp);
+                _lockService.RemoveLock(appToUnlock);
+                LockedApps.Remove(appToUnlock);
+                Logger.Log($"Unlocked app: {appToUnlock}");
             }
-            Logger.Log($"Unlocked app: {SelectedApp}");
+            else
+            {
+                System.Windows.MessageBox.Show("Incorrect password!", "Authentication Failed",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
+        }
+
+        // ── Always Lock: persists across restarts ──
+
+        private void AlwaysLockApp()
+        {
+            if (SelectedApp == null) return;
+
+            var lowerName = SelectedApp.ToLower();
+            _lockService.AddAlwaysLock(SelectedApp);
+
+            if (!AlwaysLockedApps.Contains(lowerName))
+                AlwaysLockedApps.Add(lowerName);
+
+            // Remove from session locks if present (now permanently locked)
+            LockedApps.Remove(SelectedApp);
+
+            Logger.Log($"Always locked app: {SelectedApp}");
+        }
+
+        private void SessionUnlockApp()
+        {
+            string? appToUnlock = SelectedApp;
+            if (string.IsNullOrEmpty(appToUnlock) || !AlwaysLockedApps.Contains(appToUnlock))
+            {
+                appToUnlock = AlwaysLockedApps.FirstOrDefault();
+            }
+
+            if (appToUnlock == null) return;
+
+            string input = Microsoft.VisualBasic.Interaction.InputBox(
+                $"Enter password to temporarily unlock '{appToUnlock}':\n(Will re-lock on next restart)",
+                "Session Unlock", "");
+
+            if (string.IsNullOrEmpty(input)) return;
+
+            if (_authService.Validate(input))
+            {
+                // Remove from active locks only — stays in always-locked list
+                _lockService.RemoveLock(appToUnlock);
+                Logger.Log($"Session unlocked app: {appToUnlock}");
+                System.Windows.MessageBox.Show(
+                    $"'{appToUnlock}' is unlocked for this session.\nIt will be locked again on next startup.",
+                    "Session Unlock",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Information);
+            }
+            else
+            {
+                System.Windows.MessageBox.Show("Incorrect password!", "Authentication Failed",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
+        }
+
+        private void RemoveAlwaysLockApp()
+        {
+            string? appToRemove = SelectedApp;
+            if (string.IsNullOrEmpty(appToRemove) || !AlwaysLockedApps.Contains(appToRemove))
+            {
+                appToRemove = AlwaysLockedApps.FirstOrDefault();
+            }
+
+            if (appToRemove == null) return;
+
+            string input = Microsoft.VisualBasic.Interaction.InputBox(
+                $"Enter password to permanently remove always-lock for '{appToRemove}':",
+                "Remove Always Lock", "");
+
+            if (string.IsNullOrEmpty(input)) return;
+
+            if (_authService.Validate(input))
+            {
+                _lockService.RemoveAlwaysLock(appToRemove);
+                AlwaysLockedApps.Remove(appToRemove);
+                Logger.Log($"Removed always lock: {appToRemove}");
+            }
+            else
+            {
+                System.Windows.MessageBox.Show("Incorrect password!", "Authentication Failed",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
         }
 
         private void ChangePassword()
@@ -114,5 +223,4 @@ namespace SecureAppLocker.ViewModels
             }
         }
     }
-
 }
